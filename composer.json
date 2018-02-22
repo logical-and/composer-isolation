@@ -1,0 +1,23 @@
+{
+  "name": "0x6d617474/isolate",
+  "description": "Isolates composer dependencies by prefixing namespace for all vendor code within a project",
+  "license": "MIT",
+  "minimum-stability": "alpha",
+  "type": "composer-plugin",
+  "require": {
+    "composer-plugin-api": "^1.1",
+    "nikic/php-parser": "^2.1"
+  },
+  "require-dev": {
+    "composer/composer": "^1.4",
+    "friendsofphp/php-cs-fixer": "^2.3"
+  },
+  "autoload":{
+    "psr-4":{
+      "Ox6d617474\\Isolate\\":"src/"
+    }
+  },
+  "extra": {
+    "class": "Ox6d617474\\Isolate\\Plugin"
+  }
+}
