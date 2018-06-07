@@ -20,7 +20,7 @@ final class Plugin implements PluginInterface, EventSubscriberInterface, Capable
     /**
      * The name of this package
      */
-    const PACKAGENAME = '0x6d617474/isolate';
+    const PACKAGENAME = 'and/isolate-composer';
 
     /**
      * Reference to the running Composer instance

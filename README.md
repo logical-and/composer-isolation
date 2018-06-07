@@ -29,7 +29,7 @@ case there aren't many options...).
 ## Usage  
 
 Using the plugin is straightforward. Install the plugin by requiring it 
-in your project: `composer require 0x6d617474/isolate`.
+in your project: `composer require and/isolate-composer`.
 
 Configure the plugin by adding the following to your `composer.json`: 
 ```

@@ -1,5 +1,5 @@
 {
-  "name": "0x6d617474/isolate",
+  "name": "and/isolate-composer",
   "description": "Isolates composer dependencies by prefixing namespace for all vendor code within a project",
   "license": "MIT",
   "minimum-stability": "alpha",
