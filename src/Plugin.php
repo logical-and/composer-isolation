@@ -155,8 +155,8 @@ final class Plugin implements PluginInterface, EventSubscriberInterface, Capable
     {
         $events = [
             '__isolate-dependencies' => [
-                'mutateNamespaces',
-                'mutateStaticFiles'
+                ['mutateNamespaces'],
+                ['mutateStaticFiles']
             ],
         ];
 
