@@ -8,6 +8,9 @@ use Composer\IO\IOInterface;
 use Composer\Package\PackageInterface;
 use Composer\Plugin\Capable;
 use Composer\Plugin\PluginInterface;
+use Ox6d617474\Isolate\FilehashVisitor\AbstractVisitor;
+use Ox6d617474\Isolate\FilehashVisitor\AutoloadFilesVisitor;
+use Ox6d617474\Isolate\FilehashVisitor\AutoloadStaticVisitor;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter\Standard;
@@ -151,11 +154,15 @@ final class Plugin implements PluginInterface, EventSubscriberInterface, Capable
     public static function getSubscribedEvents()
     {
         $events = [
-            '__isolate-dependencies' => 'run',
+            '__isolate-dependencies' => [
+                'mutateNamespaces',
+                'mutateStaticFiles'
+            ],
         ];
 
         if (self::$autorun) {
-            $events['pre-autoload-dump'] = 'run';
+            $events['pre-autoload-dump'] = 'mutateNamespaces';
+            $events['post-autoload-dump'] = 'mutateStaticFiles';
         }
 
         return $events;
@@ -174,9 +181,9 @@ final class Plugin implements PluginInterface, EventSubscriberInterface, Capable
     }
 
     /**
-     * Main logic
+     * Main namespaces logic
      */
-    public function run()
+    public function mutateNamespaces()
     {
         // Build the list of required packages
         if (!$this->pkgdev) {
@@ -234,6 +241,49 @@ final class Plugin implements PluginInterface, EventSubscriberInterface, Capable
 
             // Rewrite the files in vendor to use the prefixed namespaces
             $this->rewritePackage($package);
+        }
+    }
+
+    /**
+     * Static files logic
+     */
+    public function mutateStaticFiles()
+    {
+        $repo = $this->composer->getRepositoryManager()->getLocalRepository();
+        $packages = $repo->getCanonicalPackages();
+        $installManager = $this->composer->getInstallationManager();
+        $vendorsDir = rtrim(dirname(dirname($installManager->getInstallPath($packages[0]))), '\\/');
+
+        $parser = (new ParserFactory())->create(ParserFactory::PREFER_PHP7);
+        $printer = new Standard();
+
+        // Iterate over static files
+        foreach ([
+            "$vendorsDir/composer/autoload_files.php" => AutoloadFilesVisitor::class,
+            "$vendorsDir/composer/autoload_static.php" => AutoloadStaticVisitor::class,
+        ] as $filepath => $visitorClass) {
+            if (!is_file($filepath)) {
+                printf('File %s is not exist', $filepath);
+                continue;
+            }
+
+            $traverser = new NodeTraverser();
+            /** @var AbstractVisitor $visitor */
+            $visitor = new $visitorClass();
+            $traverser->addVisitor($visitor);
+
+            try {
+                $contents = file_get_contents($filepath);
+                $stmts = $parser->parse($contents);
+                $stmts = $traverser->traverse($stmts);
+
+                // Only write if we actually did a transform. Otherwise leave it alone
+                if ($visitor->didTransform()) {
+                    file_put_contents($filepath, $printer->prettyPrintFile($stmts));
+                }
+            } catch (\Exception $e) {
+                printf("Error during Isolation AST traversal: %s : %s\n%s\n", $filepath, $e->getMessage(), $e->getTraceAsString());
+            }
         }
     }
 
