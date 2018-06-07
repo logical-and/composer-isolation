@@ -12,6 +12,7 @@ $RECYCLE.BIN/
 
 # Generated content
 /vendor/
+/composer.lock
 
 # Exceptions
 !.gitignore
