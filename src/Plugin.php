@@ -269,7 +269,7 @@ final class Plugin implements PluginInterface, EventSubscriberInterface, Capable
 
             $traverser = new NodeTraverser();
             /** @var AbstractVisitor $visitor */
-            $visitor = new $visitorClass();
+            $visitor = new $visitorClass($filepath, $vendorsDir);
             $traverser->addVisitor($visitor);
 
             try {
