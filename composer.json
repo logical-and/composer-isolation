@@ -2,7 +2,8 @@
   "name": "and/isolate-composer",
   "description": "Isolates composer dependencies by prefixing namespace for all vendor code within a project",
   "license": "MIT",
-  "minimum-stability": "alpha",
+  "minimum-stability": "beta",
+  "version": "1.1",
   "type": "composer-plugin",
   "require": {
     "composer-plugin-api": "^1.1",
