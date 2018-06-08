@@ -30,6 +30,13 @@ final class Plugin implements PluginInterface, EventSubscriberInterface, Capable
     private $composer;
 
     /**
+     * IO Instance
+     *
+     * @var IOInterface
+     */
+    private $io;
+
+    /**
      * Namespace prefix
      *
      * @var string
@@ -82,6 +89,7 @@ final class Plugin implements PluginInterface, EventSubscriberInterface, Capable
     public function activate(Composer $composer, IOInterface $io)
     {
         $this->composer = $composer;
+        $this->io = $io;
         $config = $composer->getConfig()->get('isolate');
 
         // Get the namespace prefix and validate it
@@ -263,7 +271,7 @@ final class Plugin implements PluginInterface, EventSubscriberInterface, Capable
             "$vendorsDir/composer/autoload_static.php" => AutoloadStaticVisitor::class,
         ] as $filepath => $visitorClass) {
             if (!is_file($filepath)) {
-                printf('File %s is not exist', $filepath);
+                $this->io->writeError(sprintf('File %s is not exist', $filepath));
                 continue;
             }
 
@@ -282,7 +290,11 @@ final class Plugin implements PluginInterface, EventSubscriberInterface, Capable
                     file_put_contents($filepath, $printer->prettyPrintFile($stmts));
                 }
             } catch (\Exception $e) {
-                printf("Error during Isolation AST traversal: %s : %s\n%s\n", $filepath, $e->getMessage(), $e->getTraceAsString());
+                $this->io->writeError(
+                    sprintf("Error during Isolation AST traversal: %s : %s\n%s\n", $filepath, $e->getMessage(), $e->getTraceAsString()),
+                    true,
+                    IOInterface::QUIET
+                );
             }
         }
     }
@@ -346,7 +358,10 @@ final class Plugin implements PluginInterface, EventSubscriberInterface, Capable
             $traverser->traverse($stmts);
             $namespaces = $visitor->getNamespaces();
         } catch (\Exception $e) {
-            printf("Error during Isolation AST traversal: %s : %s\n%s\n", $filepath, $e->getMessage(), $e->getTraceAsString());
+            $this->io->writeError(
+                sprintf("Error during Isolation AST traversal: %s : %s\n%s\n", $filepath, $e->getMessage(), $e->getTraceAsString())
+                , true, IOInterface::QUIET
+            );
         }
 
         return $namespaces;
@@ -409,18 +424,24 @@ final class Plugin implements PluginInterface, EventSubscriberInterface, Capable
         // Process each file in the package directory
         $di = new \RecursiveDirectoryIterator($directory, \RecursiveDirectoryIterator::SKIP_DOTS);
         $it = new \RecursiveIteratorIterator($di);
+        $transformed = false;
         foreach ($it as $file) {
             $ext = pathinfo($file, PATHINFO_EXTENSION);
             $file = (string) $file;
+
             if ($ext == 'php') {
-                $this->transformFile($file);
+                $transformed = $this->transformFile($file);
             } elseif (empty($ext)) {
                 // Also grab files with no extension that contain <?php
                 // These are usually executables, but still need to be parsed
                 if (preg_match('/' . preg_quote('<?php', '/') . '/i', file_get_contents($file))) {
-                    $this->transformFile($file);
+                    $transformed = $this->transformFile($file);
                 }
             }
+        }
+
+        if ($transformed) {
+            $this->io->write(sprintf('  - isolation of "%s" package', $package->getName()));
         }
     }
 
@@ -428,6 +449,8 @@ final class Plugin implements PluginInterface, EventSubscriberInterface, Capable
      * Transform an individual file
      *
      * @param string $filepath
+     *
+     * @return bool Whether file was transformed
      */
     private function transformFile($filepath)
     {
@@ -454,13 +477,18 @@ final class Plugin implements PluginInterface, EventSubscriberInterface, Capable
                 }
             }
         } catch (\Exception $e) {
-            printf("Error during Isolation AST traversal: %s : %s\n%s\n", $filepath, $e->getMessage(), $e->getTraceAsString());
+            $this->io->writeError(
+                sprintf("Error during Isolation AST traversal: %s : %s\n%s\n", $filepath, $e->getMessage(), $e->getTraceAsString()),
+                true, IOInterface::QUIET
+            );
         }
 
         // Only write if we actually did a transform. Otherwise leave it alone
         if ($transformed) {
             file_put_contents($filepath, $contents);
         }
+
+        return $transformed;
     }
 
     /**
