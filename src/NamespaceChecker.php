@@ -88,6 +88,7 @@ final class NamespaceChecker
         }
 
         // We only want to match our list of namespaces
-        return isset($this->namespaces[$string]);
+        return isset($this->namespaces[$string]) or 
+            isset($this->namespaces[trim($this->prefix, '\\') . '\\' . $string]);
     }
 }
