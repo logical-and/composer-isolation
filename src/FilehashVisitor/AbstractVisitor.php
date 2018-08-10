@@ -21,9 +21,15 @@ abstract class AbstractVisitor extends NodeVisitorAbstract
      */
     protected $vendorsDir;
 
+    /**
+     * @var int Time to use as salt
+     */
+    protected $now = 0;
+
     public function __construct($filePath, $vendorsDir)
     {
-        $this->vendorsDir = $vendorsDir;
+        $this->vendorsDir = realpath($vendorsDir);
+        $this->now = time();
     }
 
     /**
@@ -38,27 +44,19 @@ abstract class AbstractVisitor extends NodeVisitorAbstract
 
     protected function transformFilehashArray(Node\Expr\Array_ $arrayNode)
     {
-        $printer = new Standard();
-        $parser = (new ParserFactory())->create(ParserFactory::PREFER_PHP7);
-
         foreach ($arrayNode->items as $i => $item) {
             if ($item->key instanceof Node\Scalar\String_ and false === strpos($item->key->value, 'isolated-')) {
-                // Let's cook some pretty key
-                $key = 'isolated-' .
-                    strtolower(str_replace(dirname(dirname(dirname($this->vendorsDir))), '', $this->vendorsDir)) .
-                    str_replace(['$vendorDir . ', '.php'], '', $printer->prettyPrintExpr($item->value)) .
+                $key =
+                    // Point out as already processed
+                    'isolated-' .
+                    // Absolute path + timestamp (as salt, as path can be the same if app is built in the same dir)
+                    sha1($this->vendorsDir . $this->now) . '-' .
+                    // Original key
                     $item->key->value;
                 $key = preg_replace('~[^a-z0-9\-]~', '-', $key);
                 $key = preg_replace('~\-+~', '-', $key);
                 $key = trim($key, '-');
                 $item->key->value = $key;
-
-                /*$parsed = $parser->parse(
-                    '<?php md5('.
-                    "'" . $item->key->value."' . ".
-                    $printer->prettyPrintExpr($item->value).
-                    ');');
-                $item->key = $parsed[ 0 ];*/
 
                 // Notify the source has been mutated
                 $this->transformed = true;
