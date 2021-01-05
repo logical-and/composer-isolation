@@ -7,7 +7,7 @@
   "type": "composer-plugin",
   "require": {
     "composer-plugin-api": "^1.1",
-    "nikic/php-parser": "~3.0"
+    "nikic/php-parser": "~3.0|~4.10"
   },
   "require-dev": {
     "composer/composer": "^1.4",
