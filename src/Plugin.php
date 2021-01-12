@@ -154,6 +154,16 @@ final class Plugin implements PluginInterface, EventSubscriberInterface, Capable
         }
     }
 
+    public function deactivate(Composer $composer, IOInterface $io)
+    {
+        // Nothing to do
+    }
+
+    public function uninstall(Composer $composer, IOInterface $io)
+    {
+        // Nothing to do (consider to revert mutated packages back)
+    }
+
     /**
      * Event registration
      *
@@ -245,7 +255,7 @@ final class Plugin implements PluginInterface, EventSubscriberInterface, Capable
             $repo->removePackage($package);
             $this->mutatePackage($package);
             $repo->addPackage($package);
-            $repo->write();
+            $repo->write(false, $this->composer->getInstallationManager());
 
             // Rewrite the files in vendor to use the prefixed namespaces
             $this->rewritePackage($package);
