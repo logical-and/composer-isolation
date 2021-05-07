@@ -1,5 +1,5 @@
 {
-  "name": "and/isolate-composer",
+  "name": "xwp/isolate-composer",
   "description": "Isolates composer dependencies by prefixing namespace for all vendor code within a project",
   "license": "MIT",
   "minimum-stability": "alpha",
