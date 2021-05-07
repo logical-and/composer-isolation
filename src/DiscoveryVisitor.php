@@ -30,7 +30,7 @@ final class DiscoveryVisitor extends NodeVisitorAbstract
     {
         if ($node instanceof Namespace_) {
             if (isset($node->name)) {
-                $this->namespaces[implode($node->name->parts, '\\')] = true;
+                $this->namespaces[implode('\\', $node->name->parts)] = true;
             }
         }
     }
