@@ -213,6 +213,11 @@ final class Plugin implements PluginInterface, EventSubscriberInterface, Capable
             $namespaces = array_merge($namespaces, $this->discover($package));
         }
 
+        // Bail early if nothing needs to be replaced.
+        if (empty($namespaces)) {
+            return;
+        }
+
         // Make sure we get all the interim namespaces too
         foreach ($namespaces as $ns => $null) {
             while (strlen($ns) > 0) {
