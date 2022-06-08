@@ -68,7 +68,7 @@ final class NodeVisitor extends NodeVisitorAbstract
             // No name means global namespace, so leave it alone
             if (isset($node->name)) {
                 // Keep track of the current namespace
-                $this->namespace = implode($node->name->parts, '\\');
+                $this->namespace = implode('\\', $node->name->parts);
 
                 $node->name->parts = $this->transformNamespace($node->name->parts);
             }
@@ -147,7 +147,7 @@ final class NodeVisitor extends NodeVisitorAbstract
     private function transformNamespace(array $parts)
     {
         // Build the exploded namespace into a string with a slash at the end
-        $string = sprintf('%s\\', trim(implode($parts, '\\'), '\\'));
+        $string = sprintf('%s\\', trim(implode('\\', $parts), '\\'));
 
         // Prepend the prefix
         if ($this->checker->shouldTransform($string)) {
